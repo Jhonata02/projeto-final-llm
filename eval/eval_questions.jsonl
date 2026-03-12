@@ -1,0 +1,20 @@
+{"id":"Q01","intent":"chat","question":"Qual a frequência mínima exigida para aprovação em uma disciplina?"}
+{"id":"Q02","intent":"chat","question":"Qual o prazo máximo e as condições para solicitar o trancamento de matrícula?"}
+{"id":"Q03","intent":"chat","question":"Em quais situações específicas um aluno sofre o cancelamento de vínculo (jubilamento) com a universidade?"}
+{"id":"Q04","intent":"chat","question":"Quantas horas de atividades complementares flexíveis são exigidas para se formar no curso de Ciência da Computação?"}
+{"id":"Q05","intent":"chat","question":"O estágio supervisionado é obrigatório na grade curricular do curso de Ciência da Computação?"}
+{"id":"Q06","intent":"chat","question":"Como funciona o processo e qual o prazo para solicitar revisão de nota em uma avaliação?"}
+{"id":"Q07","intent":"chat","question":"Qual é o pré-requisito exigido para cursar a disciplina de Trabalho de Conclusão de Curso?"}
+{"id":"Q08","intent":"chat","question":"O que acontece se eu reprovar por falta na mesma disciplina três vezes?"}
+{"id":"Q09","intent":"chat","question":"O regulamento permite a matrícula em disciplinas com choque de horário?"}
+{"id":"Q10","intent":"chat","question":"Quantas disciplinas o aluno pode cursar em RER (Recuperação de Exame Regular) por período letivo?"}
+{"id":"Q11","intent":"chat","question":"Qual é o limite máximo e mínimo de créditos em que posso me matricular por período letivo segundo a resolução de 2017?"}
+{"id":"Q12","intent":"chat","question":"Qual a diferença de carga horária exigida entre as disciplinas optativas gerais e as optativas específicas?"}
+{"id":"Q13","intent":"chat","question":"Qual é o pré-requisito exato da disciplina Inteligência Artificial?"}
+{"id":"Q14","intent":"chat","question":"Quais disciplinas eu preciso pagar antes de poder cursar Estrutura de Dados?"}
+{"id":"Q15","intent":"chat","question":"Qual é a carga horária total e o número mínimo de períodos para concluir o curso na estrutura atual?"}
+{"id":"Q16","intent":"chat","question":"Quais são as regras específicas para solicitar o trancamento de matrícula por motivo de saúde?"}
+{"id":"Q17","intent":"chat","question":"O que é considerado falta grave que pode levar ao cancelamento de vínculo (jubilamento) com a universidade?"}
+{"id":"Q18","intent":"chat","question":"Quantas horas de atividades complementares flexíveis podem ser cumpridas com participação em eventos acadêmicos?"}
+{"id":"Q19","intent":"chat","question":"O estágio supervisionado pode ser realizado em empresas privadas ou apenas em instituições públicas?"}
+{"id":"Q20","intent":"chat","question":"Qual é o procedimento para solicitar revisão de nota e qual o prazo para isso após a divulgação dos resultados?"}

@@ -1,0 +1,41 @@
+Aqui estão as regras oficiais de pré-requisitos do curso de Ciência da Computação:
+
+O pré-requisito da disciplina Fundamentos de Matemática para Ciência da Computação II é Fundamentos de Matemática para Ciência da Computação I.
+O pré-requisito da disciplina Cálculo Diferencial e Integral I é Fundamentos de Matemática para Ciência da Computação I.
+O pré-requisito da disciplina Cálculo Diferencial e Integral II é Cálculo Diferencial e Integral I.
+O pré-requisito da disciplina Cálculo Diferencial e Integral III é Cálculo Diferencial e Integral II e Fundamentos de Matemática para Ciência da Computação II.
+
+O pré-requisito da disciplina Programação II é Programação I e Laboratório de Programação I.
+O pré-requisito da disciplina Laboratório de Programação II é Programação I e Laboratório de Programação I.
+
+O pré-requisito da disciplina Álgebra Linear é Fundamentos de Matemática para Ciência da Computação II.
+O pré-requisito da disciplina Lógica para Computação é Fundamentos de Matemática para Ciência da Computação II.
+
+O pré-requisito da disciplina Estrutura de Dados é Programação II e Laboratório de Programação II.
+O pré-requisito da disciplina Laboratório de Estrutura de Dados é Programação II e Laboratório de Programação II.
+
+O pré-requisito da disciplina Introdução à Probabilidade é Cálculo Diferencial e Integral I e Fundamentos de Matemática para Ciência da Computação II.
+O pré-requisito da disciplina Estatística Aplicada é Introdução à Probabilidade.
+
+O pré-requisito da disciplina Projeto de Software é Programação I e Laboratório de Programação I.
+O pré-requisito da disciplina Paradigmas de Linguagem de Programação é Programação I e Laboratório de Programação I.
+O pré-requisito da disciplina Banco de Dados I é Estrutura de Dados.
+
+O pré-requisito da disciplina Organização e Arquitetura de Computadores é Introdução à Computação.
+O pré-requisito da disciplina Laboratório de Organização e Arquitetura de Computadores é Introdução à Computação.
+
+O pré-requisito da disciplina Análise de Sistemas é Programação I e Laboratório de Programação I.
+O pré-requisito da disciplina Engenharia de Software é Programação I e Laboratório de Programação I.
+O pré-requisito da disciplina Redes de Computadores é Introdução à Computação.
+
+O pré-requisito da disciplina Sistemas Operacionais é Organização e Arquitetura de Computadores.
+O pré-requisito da disciplina Teoria da Computação é Paradigmas de Linguagem de Programação.
+O pré-requisito da disciplina Programação Concorrente é Sistemas Operacionais.
+O pré-requisito da disciplina Inteligência Artificial é Teoria da Computação.
+
+O pré-requisito da disciplina Análise e Técnicas de Algoritmos é Estrutura de Dados e Laboratório de Estrutura de Dados.
+O pré-requisito da disciplina Compiladores é Paradigmas de Linguagem de Programação.
+
+O pré-requisito da disciplina Projeto em Computação I é Engenharia de Software.
+O pré-requisito da disciplina Projeto em Computação II é Projeto em Computação I.
+O pré-requisito da disciplina Trabalho de Conclusão de Curso é Projeto de Trabalho de Conclusão de Curso.
