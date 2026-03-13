@@ -24,14 +24,12 @@ class State(TypedDict, total=False):
 SIM_THRESHOLD = 0.50
 
 def _router(state: State) -> Dict[str, Any]:
-    # Lógica simples de roteamento baseada no modo selecionado na interface
     return {"intent": state.get("mode", "chat")}
 
 def _retrieve(state: State, retriever: PDFIndexerRetriever) -> Dict[str, Any]:
     if state.get("intent") == "blocked":
         return {}
     q = state.get("question")
-    # REDUZIDO PARA K=3 PARA MELHORAR AS MÉTRICAS DE RELEVÂNCIA
     hits = retriever.retrieve(q, k=3)
     return {"evidences": hits}
 
@@ -54,7 +52,6 @@ def _selfcheck(state: State, retriever: PDFIndexerRetriever) -> Dict[str, Any]:
     draft = state.get("draft") or ""
     retries = state.get("retries", 0)
 
-    # Mecanismo de antialucinação e re-busca
     if not draft.strip() or "NÃO ENCONTREI BASE" in draft:
         if retries < 1:
             print(f"[Self-Check] Falhou na tentativa {retries}. Tentando re-busca...")
@@ -73,10 +70,9 @@ def _selfcheck(state: State, retriever: PDFIndexerRetriever) -> Dict[str, Any]:
     return {"final": final}
 
 def _automation_agent(state: State) -> Dict[str, Any]:
-    # O Agente de Automação agora extrai os dados com IA e consome o MCP Real
     question = state.get("question", "")
     
-    # 1. Usar o LLM para extrair as disciplinas da intenção do usuário
+    # 1. Usar o LLM para extrair as disciplinas
     from src.answer_agent import _ollama_client, OLLAMA_MODEL
     prompt_extracao = f"Extraia apenas os nomes das disciplinas que o aluno quer cursar da frase a seguir. Retorne apenas os nomes separados por vírgula, sem texto extra. Frase: '{question}'"
     
@@ -85,23 +81,47 @@ def _automation_agent(state: State) -> Dict[str, Any]:
         resposta = cliente.generate(model=OLLAMA_MODEL, prompt=prompt_extracao)
         disciplinas_str = resposta["response"].strip()
     except Exception:
-        # Fallback de segurança se o LLM falhar
         disciplinas_str = question 
 
     plano_recomendado = "O agente analisou as diretrizes do curso e aplicou as regras de pré-requisitos locais."
     nome_aluno = "Aluno_Demo"
     
-    try:
-        # 2. Chama a ferramenta MCP passando a lista extraída
-        from mcp_server import salvar_plano_estudos
-        resultado = salvar_plano_estudos(
-            nome_aluno=nome_aluno, 
-            plano_recomendado=plano_recomendado,
-            disciplinas_pretendidas=disciplinas_str
+    # 2. Conectar ao MCP Server via Adapter do LangChain
+    import asyncio
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+    from langchain_mcp_adapters.tools import load_mcp_tools
+
+    async def run_mcp_adapter():
+        # Chama o mcp_server.py como um processo isolado (stdio)
+        server_params = StdioServerParameters(
+            command="python",
+            args=[os.path.abspath("mcp_server.py")], # Ajuste o caminho se o arquivo estiver fora da pasta src
         )
-        final_answer = f"**Automação executada com sucesso!**\n\nDisciplinas processadas: `{disciplinas_str}`\n\n{resultado}"
+        
+        async with stdio_client(server_params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                
+                # Carrega a ferramenta
+                tools = await load_mcp_tools(session)
+                mcp_tool = next((t for t in tools if t.name == "salvar_plano_estudos"), None)
+                
+                if mcp_tool:
+                    # Invoca a ferramenta MCP
+                    return await mcp_tool.ainvoke({
+                        "nome_aluno": nome_aluno,
+                        "plano_recomendado": plano_recomendado,
+                        "disciplinas_pretendidas": disciplinas_str
+                    })
+                return "Ferramenta salvar_plano_estudos não encontrada no Servidor MCP."
+
+    try:
+        # Roda o adapter assíncrono
+        mcp_resultado = asyncio.run(run_mcp_adapter())
+        final_answer = f"**Automação via Adapter MCP (stdio) executada com sucesso!**\n\nDisciplinas lidas: `{disciplinas_str}`\n\n{mcp_resultado}"
     except Exception as e:
-         final_answer = f"⚠️ Erro ao acessar ferramenta MCP: {e}"
+         final_answer = f"⚠️ Erro de conexão com o Servidor MCP: {e}"
 
     return {"final": final_answer}
 

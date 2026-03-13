@@ -1,4 +1,16 @@
 import os
+import logging
+from mcp.server.fastmcp import FastMCP
+
+# REQUISITO DE SEGURANÇA: Registrar chamadas de tool
+logging.basicConfig(
+    filename='mcp_security.log', 
+    level=logging.INFO, 
+    format='%(asctime)s - [MCP TOOL CALL] - %(message)s'
+)
+
+# Inicializa o Servidor MCP
+mcp = FastMCP("PlanejadorMatricula_UFCG")
 
 class LocalMCPServer:
     def __init__(self):
@@ -64,7 +76,6 @@ class LocalMCPServer:
         }
         
         # Histórico Mockado (Disciplinas que o aluno já pagou)
-        # Sinta-se à vontade para adicionar ou remover disciplinas daqui para testar o bloqueio!
         self.historico_aluno = [
             "fundamentos de matemática para ciência da computação i",
             "introdução à computação", 
@@ -73,7 +84,6 @@ class LocalMCPServer:
         ]
 
     def verificar_prerequisitos(self, disciplina: str) -> tuple[bool, str]:
-        # Normalizando a entrada para comparar com as chaves do dicionário
         disciplina_clean = disciplina.lower().strip()
         
         if disciplina_clean not in self.regras_curso:
@@ -121,11 +131,14 @@ class LocalMCPServer:
 # Instância global
 mcp_local = LocalMCPServer()
 
-def salvar_plano_estudos(nome_aluno: str, plano_recomendado: str, disciplinas_pretendidas: list[str] = None):
-    # Fallback caso o LLM mande uma string separada por vírgula em vez de lista
-    if isinstance(disciplinas_pretendidas, str):
-        disciplinas_pretendidas = [d.strip() for d in disciplinas_pretendidas.split(",")]
-    return mcp_local.salvar_plano_estudos(nome_aluno, plano_recomendado, disciplinas_pretendidas)
+# A Ferramenta MCP (Substitui a função simples de antes)
+@mcp.tool()
+def salvar_plano_estudos(nome_aluno: str, plano_recomendado: str, disciplinas_pretendidas: str) -> str:
+    """Verifica pré-requisitos e salva o plano de estudos. Recebe disciplinas separadas por vírgula."""
+    logging.info(f"Executando ferramenta para o aluno: {nome_aluno} | Disciplinas: {disciplinas_pretendidas}")
+    lista_disciplinas = [d.strip() for d in disciplinas_pretendidas.split(",")] if disciplinas_pretendidas else []
+    return mcp_local.salvar_plano_estudos(nome_aluno, plano_recomendado, lista_disciplinas)
 
 if __name__ == "__main__":
-    print("Servidor MCP Local com validação de grade COMPLETA pronto.")
+    # Roda o servidor expondo a ferramenta via protocolo stdio
+    mcp.run()

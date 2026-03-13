@@ -9,7 +9,7 @@
 - Faithfulness (HHEM): **0.062**
 
 ## Latência & Footprint
-- Latência média (s): **5.085**
-- Latência p95 (s): **8.295**
-- CPU média (%): **9.3**
-- RAM média (MB): **1076.4**
+- Latência média (s): **5.055**
+- Latência p95 (s): **8.358**
+- CPU média (%): **8.6**
+- RAM média (MB): **1083.6**

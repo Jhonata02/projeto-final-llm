@@ -4,7 +4,7 @@ Aluno: Aluno_Demo
 Histórico Atual (Simulado): 4 disciplinas concluídas.
 
 Análise de Pré-requisitos (Base: Res. 08/2017):
-❌ Sistemas Operacionais: BLOQUEADA. Falta cursar: Organização E Arquitetura De Computadores
+❌ Cálculo Diferencial E Integral Ii: BLOQUEADA. Falta cursar: Cálculo Diferencial E Integral I
 
 Notas do Agente:
 O agente analisou as diretrizes do curso e aplicou as regras de pré-requisitos locais.

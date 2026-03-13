@@ -5,8 +5,8 @@ import chromadb
 from chromadb.utils import embedding_functions
 from docling.document_converter import DocumentConverter
 from docling_core.types.doc import ImageRefMode
-from langchain.schema import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 class PDFIndexerRetriever:
     def __init__(self, collection_name: str = "pdfs_rag"):

@@ -199,3 +199,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+mcp_security.log
+planos_gerados/
+*.parquet
+reports/
