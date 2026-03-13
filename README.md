@@ -108,8 +108,6 @@ A avaliação da rota de Perguntas e Respostas foi conduzida utilizando o framew
 
 ## Avaliação para cada métrica
 
-*(Esta seção será atualizada com os resultados finais das avaliações)*
-
 1. Avaliar Fidelidade (Faithfulness - HHEM):
    ```bash
    PYTHONPATH=. python eval/eval_ragas.py --data eval/perguntas_com_gabarito.jsonl --mode chat --metric faithfulness_hhem --outdir reports
@@ -118,3 +116,20 @@ A avaliação da rota de Perguntas e Respostas foi conduzida utilizando o framew
    ```bash
    PYTHONPATH=. python eval/eval_ragas.py --data eval/perguntas_com_gabarito.jsonl --mode chat --metric answer_relevancy --outdir reports
 
+## 🐳 Execução via Docker (Opcional)
+
+Se preferir não instalar as dependências Python diretamente na sua máquina, você pode rodar a aplicação isolada via Docker. 
+
+**Pré-requisito:** O modelo Ollama (Mistral) deve estar instalado e rodando na sua máquina física (Host).
+
+**1. Construir a Imagem:**
+Na raiz do projeto, execute:
+
+```bash
+docker build -t assistente-ufcg .
+```
+**2. Rodar o Container:** Para que o container consiga se comunicar com o Ollama que está rodando no seu Mac/PC, utilizamos o endereço especial host.docker.internal.
+```bash
+docker run -p 8501:8501 -e OLLAMA_BASE_URL="http://host.docker.internal:11434" assistente-ufcg
+```
+**Nota:** Quando executado via Docker, os planos de estudo gerados pela ferramenta MCP serão salvos dentro do container. Para a avaliação ou demonstração ao vivo dos arquivos físicos gerados, recomenda-se a execução local padrão fora do Docker.

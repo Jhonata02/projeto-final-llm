@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "Se você utilizar este software em seu trabalho, por favor, cite-o utilizando os metadados abaixo."
+authors:
+  - family-names: "Andrade"
+    given-names: "Jhonata"
+title: "Assistente do Estudante - Ciência da Computação (UFCG)"
+version: 1.0.0
+date-released: 2026-03-13
+repository-code: "https://github.com/Jhonata02/projeto-final-llm"
+abstract: >-
+  Prova de conceito (PoC) open-source de um sistema agêntico baseado em arquitetura 
+  Zero-Trust RAG (Retrieval-Augmented Generation) e LangGraph. O sistema atua como um 
+  assistente acadêmico para consulta de regulamentos da UFCG e conta com automação 
+  segura via Model Context Protocol (MCP) para validação e geração de planos de estudo.
+keywords:
+  - LLM
+  - RAG
+  - LangGraph
+  - Educação
+  - MCP
+license: MIT
