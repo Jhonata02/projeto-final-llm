@@ -1,52 +1,52 @@
-# src/answer_agent.py
-from __future__ import annotations
-from typing import List, Dict
 import os
-
 import ollama
-from src.prompts import get_chat_prompt, get_detector_prompt
-from ollama import Client
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "mistral")
 
-def _ollama_client() -> Client:
-    base_url = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
-    return Client(host=base_url)
+def _ollama_client():
+    return ollama.Client(host=os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434"))
 
-
-def _format_evidence(hits: List[Dict]) -> str:
-    if not hits:
-        return "Nenhuma evidência encontrada."
-    lines = []
-    for i, h in enumerate(hits, 1):
-        meta = h.get("meta", {}) if "meta" in h else h
-        title = meta.get("title") or meta.get("source") or f"Fonte {i}"
-        url = meta.get("url") or meta.get("source_url") or ""
-        page = f" p. {meta.get('page')}" if meta.get("page") else ""
-        txt = (h.get("text") or "").replace("\n", " ")
-        lines.append(f"[{i}] {title} ({url}{page})\n>>> {txt}")
-    return "\n\n".join(lines)
-
-
-def generate(user_query: str, hits: List[Dict], history: List[Dict], prompt_type: str = "chat") -> str:
-    """
-    Sua função original — mantida para compatibilidade.
-    """
-    local_context = _format_evidence(hits)
-    prompt_template = get_chat_prompt() if prompt_type == "chat" else get_detector_prompt()
-    prompt = prompt_template.format(query=user_query, local_context=local_context, history=history)
-    
+def generate(user_query: str, hits: list, history: list = None, prompt_type: str = "chat"):
     client = _ollama_client()
+    
+    # 1. Construção do Contexto
+    context_text = ""
+    for i, hit in enumerate(hits, 1):
+        content = hit.get("text", "").strip()
+        source = hit.get("metadata", {}).get("source", "Documento desconhecido")
+        context_text += f"--- TRECHO {i} (Fonte: {source}) ---\n{content}\n\n"
 
-    resp = client.generate(
-        model=OLLAMA_MODEL,
-        prompt=prompt,
-        options={"num_predict": 800, "temperature": 0}
+    # 2. SYSTEM PROMPT BLINDADO (A chave para a Faithfulness)
+    system_instruction = (
+        "Você é um Assistente Acadêmico da UFCG estritamente fiel aos documentos fornecidos.\n"
+        "REGRAS CRÍTICAS DE RESPOSTA:\n"
+        "1. Use APENAS as informações contidas nos trechos de contexto abaixo.\n"
+        "2. Se a informação não estiver presente no contexto, responda exatamente: 'NÃO ENCONTREI BASE NOS DOCUMENTOS'.\n"
+        "3. PROIBIDO usar conhecimento prévio sobre outras universidades ou senso comum.\n"
+        "4. Seja direto, técnico e cite o nome do arquivo da fonte (ex: [res_082017.pdf]) ao final da frase.\n"
+        "5. Não tente ser útil inventando prazos ou regras que não estão no texto."
     )
-    return resp["response"]
 
-def generate_answer(user_query: str, evidences: List[Dict], history: List[Dict], prompt_type: str = "chat") -> str:
-    """
-    Nome que o agent_graph.py importa. Apenas delega para `generate`.
-    """
-    return generate(user_query=user_query, hits=evidences, history=history, prompt_type=prompt_type)
+    full_prompt = f"""{system_instruction}
+
+CONTEXTO DISPONÍVEL:
+{context_text}
+
+PERGUNTA DO ALUNO:
+{user_query}
+
+RESPOSTA FIEL:"""
+
+    # 3. PARÂMETROS DE PRECISÃO (Temperatura 0 é obrigatória)
+    response = client.generate(
+        model=OLLAMA_MODEL,
+        prompt=full_prompt,
+        options={
+            "temperature": 0.0,       # Elimina a aleatoriedade
+            "num_predict": 700,       # Limita o tamanho para evitar 'encheção de linguiça'
+            "top_p": 0.1,             # Foca apenas nas palavras mais prováveis do contexto
+            "stop": ["---", "DÚVIDA"] # Para a geração se começar a alucinar formatos
+        }
+    )
+
+    return response["response"]

@@ -1,9 +1,8 @@
-# src/agent_graph.py
 from __future__ import annotations
 from typing import TypedDict, Literal, List, Dict, Any, Optional
 import os, re, unicodedata
 
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
 
 from src.retriever import PDFIndexerRetriever
@@ -19,7 +18,7 @@ class State(TypedDict, total=False):
     draft: str
     final: str
     sensitive_category: Optional[str]
-    retries: int # Contador para o Self-Check
+    retries: int 
 
 SIM_THRESHOLD = 0.50
 
@@ -27,10 +26,8 @@ def _router(state: State) -> Dict[str, Any]:
     return {"intent": state.get("mode", "chat")}
 
 def _retrieve(state: State, retriever: PDFIndexerRetriever) -> Dict[str, Any]:
-    if state.get("intent") == "blocked":
-        return {}
     q = state.get("question")
-    hits = retriever.retrieve(q, k=3)
+    hits = retriever.retrieve(q, k=3) # V3 fixo em K=3
     return {"evidences": hits}
 
 def _answer(state: State) -> Dict[str, Any]:
@@ -71,8 +68,6 @@ def _selfcheck(state: State, retriever: PDFIndexerRetriever) -> Dict[str, Any]:
 
 def _automation_agent(state: State) -> Dict[str, Any]:
     question = state.get("question", "")
-    
-    # 1. Usar o LLM para extrair as disciplinas
     from src.answer_agent import _ollama_client, OLLAMA_MODEL
     prompt_extracao = f"Extraia apenas os nomes das disciplinas que o aluno quer cursar da frase a seguir. Retorne apenas os nomes separados por vírgula, sem texto extra. Frase: '{question}'"
     
@@ -86,29 +81,22 @@ def _automation_agent(state: State) -> Dict[str, Any]:
     plano_recomendado = "O agente analisou as diretrizes do curso e aplicou as regras de pré-requisitos locais."
     nome_aluno = "Aluno_Demo"
     
-    # 2. Conectar ao MCP Server via Adapter do LangChain
     import asyncio
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
     from langchain_mcp_adapters.tools import load_mcp_tools
 
     async def run_mcp_adapter():
-        # Chama o mcp_server.py como um processo isolado (stdio)
         server_params = StdioServerParameters(
             command="python",
-            args=[os.path.abspath("mcp_server.py")], # Ajuste o caminho se o arquivo estiver fora da pasta src
+            args=[os.path.abspath("mcp_server.py")], 
         )
-        
         async with stdio_client(server_params) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
-                
-                # Carrega a ferramenta
                 tools = await load_mcp_tools(session)
                 mcp_tool = next((t for t in tools if t.name == "salvar_plano_estudos"), None)
-                
                 if mcp_tool:
-                    # Invoca a ferramenta MCP
                     return await mcp_tool.ainvoke({
                         "nome_aluno": nome_aluno,
                         "plano_recomendado": plano_recomendado,
@@ -117,18 +105,12 @@ def _automation_agent(state: State) -> Dict[str, Any]:
                 return "Ferramenta salvar_plano_estudos não encontrada no Servidor MCP."
 
     try:
-        # Roda o adapter assíncrono
         mcp_resultado = asyncio.run(run_mcp_adapter())
         final_answer = f"**Automação via Adapter MCP (stdio) executada com sucesso!**\n\nDisciplinas lidas: `{disciplinas_str}`\n\n{mcp_resultado}"
     except Exception as e:
          final_answer = f"⚠️ Erro de conexão com o Servidor MCP: {e}"
 
     return {"final": final_answer}
-
-def decide_after_selfcheck(state: State):
-    if state.get("final") == "REBUSCAR":
-        return "retrieve"
-    return END
 
 def build_app(retriever: PDFIndexerRetriever):
     g = StateGraph(State)
@@ -147,7 +129,7 @@ def build_app(retriever: PDFIndexerRetriever):
     
     g.add_edge("retrieve", "answer")
     g.add_edge("answer", "selfcheck")
-    g.add_conditional_edges("selfcheck", decide_after_selfcheck)
+    g.add_edge("selfcheck", END)
     g.add_edge("automation", END)
 
     return g.compile(checkpointer=MemorySaver())

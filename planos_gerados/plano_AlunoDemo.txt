@@ -4,7 +4,8 @@ Aluno: Aluno_Demo
 Histórico Atual (Simulado): 4 disciplinas concluídas.
 
 Análise de Pré-requisitos (Base: Res. 08/2017):
-❌ Cálculo Diferencial E Integral Ii: BLOQUEADA. Falta cursar: Cálculo Diferencial E Integral I
+❌ Inteligência Artificial: BLOQUEADA. Falta cursar: Teoria Da Computação
+❌ Trabalho De Conclusão De Curso: BLOQUEADA. Falta cursar: Projeto De Trabalho De Conclusão De Curso
 
 Notas do Agente:
 O agente analisou as diretrizes do curso e aplicou as regras de pré-requisitos locais.

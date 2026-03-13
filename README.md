@@ -24,7 +24,7 @@ Para mitigar os riscos inerentes de segurança em servidores MCP (como exfiltra�
    source .venv/bin/activate  # No Windows use: .venv\Scripts\activate
 
 3. Instalar dependências:
-   python3 -m pip install --no-cache --no-deps -r requirements.txt
+   python3 -m pip install -r requirements.txt
 
 4. Ingestão de Dados (Indexação):
    - Certifique-se de que os PDFs do curso (resoluções, regulamentos) e o arquivo `resumo_prerequisitos.txt` estão na pasta `data/pdfs/`.
@@ -54,3 +54,6 @@ Para mitigar os riscos inerentes de segurança em servidores MCP (como exfiltra�
 
 2. Avaliar Relevância da Resposta (Answer Relevancy):
    PYTHONPATH=. python eval/eval_ragas.py --data eval/perguntas_com_gabarito.jsonl --mode chat --metric answer_relevancy --outdir reports
+
+3. Avaliar Fidelidade (Faithfulness)
+   PYTHONPATH=. OLLAMA_MODEL=llama3 OLLAMA_JUDGE=mistral python eval/eval_ragas.py --data eval/perguntas_com_gabarito.jsonl --mode chat --metric faithfulness --outdir reports

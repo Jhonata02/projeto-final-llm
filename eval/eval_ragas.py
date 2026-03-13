@@ -309,7 +309,7 @@ def main():
         from langchain_community.embeddings import HuggingFaceEmbeddings
 
     base_url = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
-    OLLAMA_JUDGE = os.getenv("OLLAMA_JUDGE", "mistral")  # você pediu mistral:7b
+    OLLAMA_JUDGE = os.getenv("OLLAMA_JUDGE", "mistral") 
     OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", "0.0"))
     OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "4096"))
     OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "512"))
