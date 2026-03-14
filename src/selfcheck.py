@@ -71,7 +71,8 @@ def check_claims_and_rewrite(
             continue  
 
         ev = supports[0]
-        meta = ev.get("metadata", {}) # Corrigido de 'meta' para 'metadata' padrão do Chroma
+        # Compatibilidade com versoes antigas que usavam "meta".
+        meta = ev.get("metadata") or ev.get("meta") or {}
         title = meta.get("source") or "Documento"
         page = meta.get("page")
 

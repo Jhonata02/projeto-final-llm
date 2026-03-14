@@ -1,5 +1,60 @@
 import streamlit as st
 from src.pipeline import run_pipeline
+from src.pipeline import get_app
+from typing import Any, Dict, List
+import json
+import statistics
+import streamlit.components.v1 as components
+
+
+def _extract_sources(evidences: List[Dict[str, Any]]) -> List[str]:
+    sources = []
+    for ev in evidences:
+        meta = ev.get("metadata") or ev.get("meta") or {}
+        src = meta.get("source") or "Documento"
+        page = meta.get("page")
+        label = f"{src} (p. {page})" if page else str(src)
+        if label not in sources:
+            sources.append(label)
+    return sources
+
+
+def _render_copy_button(text: str, key: str) -> None:
+    js_text = json.dumps(text, ensure_ascii=False)
+    components.html(
+        f"""
+        <button id="copy-{key}" style="padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#f8f9fa;cursor:pointer;">
+          📋 Copiar resposta
+        </button>
+        <script>
+          const btn = document.getElementById("copy-{key}");
+          btn.onclick = async () => {{
+            await navigator.clipboard.writeText({js_text});
+            btn.innerText = "✅ Copiado!";
+            setTimeout(() => btn.innerText = "📋 Copiar resposta", 1200);
+          }};
+        </script>
+        """,
+        height=46,
+    )
+
+
+def _run_chat_with_meta(user_input: str, history: List[Dict[str, str]]) -> Dict[str, Any]:
+    app = get_app()
+    out = app.invoke(
+        {"question": user_input, "mode": "chat", "history": history},
+        config={"configurable": {"thread_id": "main"}},
+    )
+    answer = out.get("final") or out.get("draft") or "NÃO ENCONTREI BASE"
+    if answer.strip() == "REBUSCAR":
+        answer = (
+            "Desculpe, a busca nos regulamentos não foi conclusiva ou a informação "
+            "não está clara nos documentos. Tente reformular a pergunta com mais detalhes."
+        )
+    return {
+        "answer": answer,
+        "evidences": out.get("evidences") or [],
+    }
 
 # 1. Configuração da Página (Deve ser a primeira linha)
 st.set_page_config(
@@ -25,7 +80,7 @@ with st.sidebar:
     
     **Componentes:**
     - 🧠 **LLM:** Llama 3 / Mistral Local
-    - 📚 **Retriever:** Busca Híbrida (BM25 + ChromaDB)
+    - 📚 **Retriever:** Busca densa vetorial (ChromaDB)
     - 🛡️ **Segurança:** Nó de *Self-Check* Anti-alucinação
     - 🔌 **Automação:** Integração MCP (Model Context Protocol)
     """)
@@ -75,16 +130,34 @@ with tab1:
         with st.chat_message("assistant", avatar="🤖"):
             with st.spinner("Analisando regulamentos oficiais..."):
                 try:
-                    answer = run_pipeline("chat", user_q, history=st.session_state.chat_history)
-                    
-                    # Filtro de Interface: Trata vazamentos de variáveis internas do LangGraph
-                    if answer.strip() == "REBUSCAR":
-                        answer = "Desculpe, a busca nos regulamentos não foi conclusiva ou a informação não está clara nos documentos. Tente reformular a pergunta com mais detalhes."
-                        
+                    result = _run_chat_with_meta(user_q, history=st.session_state.chat_history)
+                    answer = result["answer"]
+                    evidences = result["evidences"]
                 except Exception as e:
                     answer = f"⚠️ **Erro ao processar pergunta:** {e}"
+                    evidences = []
 
-            st.markdown(answer)
+            if len(answer) > 700:
+                st.markdown(answer[:700].rstrip() + "...")
+                with st.expander("Ver resposta completa"):
+                    st.markdown(answer)
+            else:
+                st.markdown(answer)
+
+            if evidences:
+                sims = [float(e.get("similarity", 0.0)) for e in evidences if e.get("similarity") is not None]
+                avg_sim = statistics.mean(sims) if sims else 0.0
+                c1, c2 = st.columns(2)
+                c1.metric("Trechos de evidência", len(evidences))
+                c2.metric("Similaridade média", f"{avg_sim:.2f}")
+
+                fontes = _extract_sources(evidences)
+                with st.expander("📚 Fontes consultadas"):
+                    for fonte in fontes:
+                        st.markdown(f"- {fonte}")
+
+            _render_copy_button(answer, key=f"copy-{len(st.session_state.chat_history)}")
+
             st.session_state.chat_history.append({"role": "assistant", "content": answer})
 
 # ==========================================

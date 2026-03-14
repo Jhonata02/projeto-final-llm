@@ -1,11 +1,21 @@
 from __future__ import annotations
-import os, hashlib, re, unicodedata
+import argparse
+import hashlib
+import os
+import re
+import unicodedata
+from typing import List
 import chromadb
 from chromadb.utils import embedding_functions
-from docling.document_converter import DocumentConverter
-from docling_core.types.doc import ImageRefMode
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+try:
+    from docling.document_converter import DocumentConverter
+    from docling_core.types.doc import ImageRefMode
+except ImportError:  # pragma: no cover - depende do ambiente local
+    DocumentConverter = None
+    ImageRefMode = None
 
 def clean_text(text: str) -> str:
     """Limpa ruídos comuns de extração de PDF para melhorar a busca vetorial."""
@@ -27,19 +37,23 @@ class PDFIndexerRetriever:
             name=collection_name,
             embedding_function=ef,
         )
-        self.converter = DocumentConverter()
+        self.converter = DocumentConverter() if DocumentConverter is not None else None
         self.splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000, 
             chunk_overlap=200,
             separators=["\nArt.", "\n§", "\nArt", ". ", " ", ""]
         )
 
-    def ensure_ready(self):
+    def ensure_ready(self) -> None:
+        """Garante que a collection já possua dados indexados."""
         if self.collection.count() == 0:
-            return True
-        return False
+            raise RuntimeError(
+                "Collection vazia. Rode a ingestao/indexacao antes de consultar."
+            )
 
     def load_pdfs(self, pdf_paths):
+        if pdf_paths and self.converter is None:
+            return []
         all_docs = []
         for path in pdf_paths:
             dldoc = self.converter.convert(path).document
@@ -54,6 +68,20 @@ class PDFIndexerRetriever:
                 cleaned_text = clean_text(md_text)
                 if cleaned_text:
                     all_docs.append(Document(page_content=cleaned_text, metadata={"source": basename, "page": p}))
+        return all_docs
+
+    def load_txts(self, txt_paths: List[str]) -> List[Document]:
+        all_docs: List[Document] = []
+        for path in txt_paths:
+            with open(path, "r", encoding="utf-8") as f:
+                content = clean_text(f.read())
+            if content:
+                all_docs.append(
+                    Document(
+                        page_content=content,
+                        metadata={"source": os.path.basename(path), "page": None},
+                    )
+                )
         return all_docs
 
     def _stable_id(self, text: str, meta: dict) -> str:
@@ -75,13 +103,26 @@ class PDFIndexerRetriever:
         self.collection.upsert(documents=texts, metadatas=metadatas, ids=ids)
 
     def build_index_from_folder(self, folder_path: str) -> None:
-        pdfs = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith(".pdf")]
-        if not pdfs: return
+        files = [os.path.join(folder_path, f) for f in os.listdir(folder_path)]
+        pdfs = [f for f in files if f.lower().endswith(".pdf")]
+        txts = [f for f in files if f.lower().endswith(".txt")]
+        if pdfs and self.converter is None and not txts:
+            raise RuntimeError(
+                "Foram encontrados PDFs, mas o parser de PDF (docling) nao esta disponivel. "
+                "Instale as dependencias ou inclua .txt na pasta para indexacao."
+            )
+        if pdfs and self.converter is None and txts:
+            print(
+                "[Aviso] PDFs ignorados porque docling nao esta disponivel. "
+                "Indexando apenas arquivos .txt."
+            )
+        docs = self.load_pdfs(pdfs) + self.load_txts(txts)
+        if not docs:
+            raise ValueError(f"Nenhum documento .pdf/.txt encontrado em {folder_path}.")
         self.client.delete_collection(name=self.collection.name)
         self.collection = self.client.get_or_create_collection(
             name=self.collection.name, embedding_function=self.collection._embedding_function
         )
-        docs = self.load_pdfs(pdfs)
         self.chunk_and_index(docs)
 
     def retrieve(self, query: str, k: int = 5):
@@ -98,6 +139,32 @@ class PDFIndexerRetriever:
         hits = []
         for _id, doc, meta, dist in zip(ids, docs, metas, dists):
             sim = 1.0 - float(dist)  
-            hits.append({"id": _id, "text": doc, "meta": meta, "distance": dist, "similarity": sim})
+            hits.append({"id": _id, "text": doc, "metadata": meta, "distance": dist, "similarity": sim})
         hits.sort(key=lambda h: h["similarity"], reverse=True)
         return hits
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Indexa corpus local no ChromaDB.")
+    parser.add_argument(
+        "--folder",
+        default="data/pdfs",
+        help="Pasta com documentos .pdf/.txt para indexacao.",
+    )
+    parser.add_argument(
+        "--collection",
+        default="pdfs_rag",
+        help="Nome da collection no ChromaDB.",
+    )
+    args = parser.parse_args()
+
+    retriever = PDFIndexerRetriever(collection_name=args.collection)
+    retriever.build_index_from_folder(args.folder)
+    print(
+        f"Indexacao concluida. Collection '{args.collection}' com "
+        f"{retriever.collection.count()} chunks."
+    )
+
+
+if __name__ == "__main__":
+    main()

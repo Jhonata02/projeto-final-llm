@@ -1,13 +1,12 @@
 from __future__ import annotations
-from typing import Literal, Optional, List, Dict, Any
-import os
+from typing import Literal, Optional, List, Dict
 
 from src.retriever import PDFIndexerRetriever
 from src.agent_graph import build_app  
-from src.safety import add_disclaimer
 
 _retriever: Optional[PDFIndexerRetriever] = None
 _app = None
+DEFAULT_CORPUS_FOLDER = "data/pdfs"
 
 def get_retriever() -> PDFIndexerRetriever:
     global _retriever
@@ -15,8 +14,14 @@ def get_retriever() -> PDFIndexerRetriever:
         _retriever = PDFIndexerRetriever()
         try:
             _retriever.ensure_ready()
-        except RuntimeError:
-            _retriever.build_index_from_folder("data/pdfs")
+        except RuntimeError as exc:
+            try:
+                _retriever.build_index_from_folder(DEFAULT_CORPUS_FOLDER)
+            except ValueError as build_exc:
+                raise RuntimeError(
+                    "Retriever sem indice e sem documentos para indexacao em "
+                    f"'{DEFAULT_CORPUS_FOLDER}'."
+                ) from build_exc
             _retriever.ensure_ready()
     return _retriever
 

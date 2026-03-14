@@ -68,33 +68,43 @@ A avaliação da rota de Perguntas e Respostas foi conduzida utilizando o framew
 
 ## 🚀 Setup e Execução (Mínimo)
 
-1. Clonar o repositório:**
+1. **Clonar o repositório**
    ```bash
    git clone <repo-url>
    cd <nome-da-pasta>
+   ```
 
-2. Criar ambiente virtual:
+2. **Criar ambiente virtual**
    ```bash
-   python3 -m venv .venv 
-   source .venv/bin/activate  # No Windows use: .venv\Scripts\activate
+   python3 -m venv .venv
+   source .venv/bin/activate  # No Windows: .venv\Scripts\activate
+   ```
 
-3. Instalar dependências:
+3. **Instalar dependências**
    ```bash
    python3 -m pip install -r requirements.txt
+   ```
 
-4. Ingestão de Dados (Indexação):
-   - Certifique-se de que os PDFs do curso (resoluções, regulamentos) e o arquivo `resumo_prerequisitos.txt` estão na pasta `data/pdfs/`.
-   - Crie o banco vetorial rodando:
+4. **Ingestão de dados (indexação reprodutível)**
+   - Coloque os documentos da base em `data/pdfs/` (`.pdf` e/ou `.txt`).
+   - Reconstrua o índice vetorial:
    ```bash
-   python3 src/retriever.py
-
-5. Gerar o `perguntas_com_gabarito.jsonl`:
+   PYTHONPATH=. python ingest/build_index.py --folder data/pdfs
+   ```
+   - Alternativa equivalente:
    ```bash
-   python src/gen_gabarito.py --in eval/eval_questions.jsonl --out eval/perguntas_com_gabarito.jsonl
+   PYTHONPATH=. python src/retriever.py --folder data/pdfs
+   ```
 
-6. Rodar a aplicação:
+5. **Gerar `perguntas_com_gabarito.jsonl`**
+   ```bash
+   PYTHONPATH=. python src/gen_gabarito.py --in eval/eval_questions.jsonl --out eval/perguntas_com_gabarito.jsonl
+   ```
+
+6. **Rodar a aplicação**
    ```bash
    PYTHONPATH=. streamlit run app/streamlit_app.py
+   ```
 
 ## Execução local com Ollama
 
@@ -108,13 +118,32 @@ A avaliação da rota de Perguntas e Respostas foi conduzida utilizando o framew
 
 ## Avaliação para cada métrica
 
-1. Avaliar Fidelidade (Faithfulness - HHEM):
+1. **Avaliar Fidelidade (Faithfulness - HHEM)**:
    ```bash
    PYTHONPATH=. python eval/eval_ragas.py --data eval/perguntas_com_gabarito.jsonl --mode chat --metric faithfulness_hhem --outdir reports
+   ```
 
-2. Avaliar Relevância da Resposta (Answer Relevancy):
+2. **Avaliar Relevância da Resposta (Answer Relevancy)**:
    ```bash
    PYTHONPATH=. python eval/eval_ragas.py --data eval/perguntas_com_gabarito.jsonl --mode chat --metric answer_relevancy --outdir reports
+   ```
+
+## ✅ Testes rápidos
+
+Execute os testes de fumaça para validar contrato do retriever e bootstrap do pipeline:
+
+```bash
+PYTHONPATH=. python -m unittest discover -s tests -p "test_*.py"
+```
+
+## 📁 Estrutura mínima do projeto
+
+- `src/`: núcleo agêntico (grafo, retriever, self-check, answerer).
+- `app/`: interface Streamlit.
+- `ingest/`: scripts de indexação/reindexação do corpus.
+- `eval/`: perguntas e scripts de avaliação.
+- `tests/`: testes de fumaça do fluxo principal.
+- `reports/`: relatórios de métricas gerados pelo RAGAS.
 
 ## 🐳 Execução via Docker (Opcional)
 

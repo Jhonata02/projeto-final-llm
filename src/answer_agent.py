@@ -13,7 +13,9 @@ def generate(user_query: str, hits: list, history: list = None, prompt_type: str
     context_text = ""
     for i, hit in enumerate(hits, 1):
         content = hit.get("text", "").strip()
-        source = hit.get("metadata", {}).get("source", "Documento desconhecido")
+        # Compatibilidade com versoes antigas que usavam "meta".
+        metadata = hit.get("metadata") or hit.get("meta") or {}
+        source = metadata.get("source", "Documento desconhecido")
         context_text += f"--- TRECHO {i} (Fonte: {source}) ---\n{content}\n\n"
 
     # 2. SYSTEM PROMPT BLINDADO (A chave para a Faithfulness)
