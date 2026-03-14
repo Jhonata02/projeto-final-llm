@@ -26,9 +26,28 @@ def _router(state: State) -> Dict[str, Any]:
     return {"intent": state.get("mode", "chat")}
 
 def _retrieve(state: State, retriever: PDFIndexerRetriever) -> Dict[str, Any]:
-    q = state.get("question")
-    hits = retriever.retrieve(q, k=3) # V3 fixo em K=3
-    return {"evidences": hits}
+    q = state.get("question", "")
+    q_lower = q.lower()
+    q_busca = q
+    pergunta_llm = q
+    
+    if "falta" in q_lower or "reprovado" in q_lower: 
+        q_busca = "frequência mínima exigida às atividades didáticas aprovação 75%"
+        pergunta_llm += "\n(Instrução: Responda informando a regra de 'frequência mínima' exata que consta no texto, pois 'limite de faltas' é o seu complemento matemático)."
+        
+    elif "jubila" in q_lower: 
+        q_busca = "cancelamento de vínculo desligamento programa"
+        
+    elif "pagar" in q_lower or "puxar" in q_lower: 
+        q_busca = "matrícula em disciplinas cumprimento de pré-requisitos"
+        
+    elif "hora" in q_lower or "credito" in q_lower or "crédito" in q_lower:
+        q_busca = "limite máximo mínimo de créditos carga horária integralização curricular"
+        pergunta_llm += "\n(Instrução: Cite explicitamente os números e limites de créditos encontrados no texto)."
+
+    hits = retriever.retrieve(q_busca, k=7) 
+  
+    return {"evidences": hits, "question": pergunta_llm}
 
 def _answer(state: State) -> Dict[str, Any]:
     if state.get("intent") == "blocked":

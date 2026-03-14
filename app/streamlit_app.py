@@ -1,5 +1,5 @@
 import streamlit as st
-from src.pipeline import run_pipeline
+from src.pipeline import get_app
 
 # 1. Configuração da Página (Deve ser a primeira linha)
 st.set_page_config(
@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Estilização CSS Customizada (Opcional, para deixar mais elegante)
+# 2. Estilização CSS Customizada
 st.markdown("""
     <style>
     .stTextArea textarea { font-size: 16px; }
@@ -17,7 +17,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. Barra Lateral (Sidebar) com informações do projeto
+# 3. Barra Lateral (Sidebar) com informações do projeto corrigidas
 with st.sidebar:
     st.title("⚙️ Sobre o Sistema")
     st.markdown("""
@@ -25,7 +25,7 @@ with st.sidebar:
     
     **Componentes:**
     - 🧠 **LLM:** Llama 3 / Mistral Local
-    - 📚 **Retriever:** Busca Híbrida (BM25 + ChromaDB)
+    - 📚 **Retriever:** ChromaDB (Busca Vetorial Densa)
     - 🛡️ **Segurança:** Nó de *Self-Check* Anti-alucinação
     - 🔌 **Automação:** Integração MCP (Model Context Protocol)
     """)
@@ -61,31 +61,79 @@ with tab1:
         avatar = "🧑‍🎓" if msg["role"] == "user" else "🤖"
         with st.chat_message(msg["role"], avatar=avatar):
             st.markdown(msg["content"])
+            
+            # Se for o bot e tiver evidências, mostra o Expander de métricas
+            if msg.get("evidences"):
+                with st.expander("🔍 Ver Fontes e Evidências Recuperadas"):
+                    evs = msg["evidences"]
+                    avg_sim = sum(e.get("similarity", 0) for e in evs) / len(evs)
+                    st.caption(f"📊 **Similaridade Média das Evidências:** `{avg_sim:.1%}`")
+                    
+                    for i, ev in enumerate(evs, 1):
+                        meta = ev.get("meta", {})
+                        src = meta.get("source", "Documento")
+                        page = meta.get("page", "-")
+                        sim = ev.get("similarity", 0)
+                        snippet = ev.get("text", "")[:250].replace("\n", " ") + "..."
+                        
+                        st.markdown(f"**{i}. {src}** (Pág: {page}) | *Score: {sim:.1%}*")
+                        st.info(f"\"{snippet}\"")
 
     # Caixa de entrada do usuário
     user_q = st.chat_input("Ex: Qual o limite de faltas na disciplina de NLP?")
     
     if user_q:
-        # Exibe a pergunta do usuário
+        # Exibe a pergunta do usuário na tela e salva no histórico
         with st.chat_message("user", avatar="🧑‍🎓"):
             st.markdown(user_q)
         st.session_state.chat_history.append({"role": "user", "content": user_q})
 
         # Processa a resposta do Assistente
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("Analisando regulamentos oficiais..."):
+            with st.spinner("Buscando vetores e analisando regulamentos..."):
                 try:
-                    answer = run_pipeline("chat", user_q, history=st.session_state.chat_history)
+                    # Chama o grafo diretamente para conseguirmos capturar as evidências
+                    app = get_app()
+                    state_out = app.invoke(
+                        {"question": user_q, "mode": "chat", "history": st.session_state.chat_history},
+                        config={"configurable": {"thread_id": "main"}}
+                    )
                     
-                    # Filtro de Interface: Trata vazamentos de variáveis internas do LangGraph
+                    answer = state_out.get("final") or state_out.get("draft") or "NÃO ENCONTREI BASE"
+                    evidences = state_out.get("evidences", [])
+                    
+                    # Filtro de Interface para UX
                     if answer.strip() == "REBUSCAR":
-                        answer = "Desculpe, a busca nos regulamentos não foi conclusiva ou a informação não está clara nos documentos. Tente reformular a pergunta com mais detalhes."
+                        answer = "Desculpe, a busca vetorial encontrou trechos com baixa similaridade ou a informação não está explícita nos regulamentos. O *Self-Check* bloqueou a resposta por segurança. Tente reformular a pergunta."
                         
                 except Exception as e:
                     answer = f"⚠️ **Erro ao processar pergunta:** {e}"
+                    evidences = []
 
+            # Mostra a resposta principal
             st.markdown(answer)
-            st.session_state.chat_history.append({"role": "assistant", "content": answer})
+            
+            # Desenha as evidências ao vivo (igual no loop do histórico)
+            if evidences:
+                with st.expander("🔍 Ver Fontes e Evidências Recuperadas"):
+                    avg_sim = sum(e.get("similarity", 0) for e in evidences) / len(evidences)
+                    st.caption(f"📊 **Similaridade Média das Evidências:** `{avg_sim:.1%}`")
+                    for i, ev in enumerate(evidences, 1):
+                        meta = ev.get("meta", {})
+                        src = meta.get("source", "Documento")
+                        page = meta.get("page", "-")
+                        sim = ev.get("similarity", 0)
+                        snippet = ev.get("text", "")[:250].replace("\n", " ") + "..."
+                        
+                        st.markdown(f"**{i}. {src}** (Pág: {page}) | *Score: {sim:.1%}*")
+                        st.info(f"\"{snippet}\"")
+            
+            # Salva resposta e evidências no histórico
+            st.session_state.chat_history.append({
+                "role": "assistant", 
+                "content": answer,
+                "evidences": evidences
+            })
 
 # ==========================================
 # ABA 2: AUTOMAÇÃO MCP
@@ -108,9 +156,15 @@ with tab2:
         if not user_msg.strip():
             st.warning("Por favor, digite as disciplinas que deseja cursar antes de gerar o plano.")
         else:
-            with st.spinner("Extraindo entidades e conectando ao Servidor MCP..."):
+            with st.spinner("Extraindo entidades e conectando ao Servidor MCP via stdio..."):
                 try:
-                    analysis = run_pipeline("automation", user_msg)
+                    app = get_app()
+                    out_auto = app.invoke(
+                        {"question": user_msg, "mode": "automation"}, 
+                        config={"configurable": {"thread_id": "main"}}
+                    )
+                    analysis = out_auto.get("final", "⚠️ Erro ao gerar resposta.")
+                    
                     st.success("✅ Processo de automação concluído com sucesso!")
                     
                     # Exibe o resultado em um container destacado

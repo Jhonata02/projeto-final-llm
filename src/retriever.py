@@ -100,4 +100,30 @@ class PDFIndexerRetriever:
             sim = 1.0 - float(dist)  
             hits.append({"id": _id, "text": doc, "meta": meta, "distance": dist, "similarity": sim})
         hits.sort(key=lambda h: h["similarity"], reverse=True)
-        return hits
+        return hits 
+
+if __name__ == "__main__":
+    caminho_dados = "data/pdfs"
+    print(f"Iniciando verificação na pasta '{caminho_dados}'...")
+
+    if not os.path.exists(caminho_dados) or not any(f.lower().endswith('.pdf') for f in os.listdir(caminho_dados)):
+        print("⚠️ ERRO: Nenhum arquivo PDF encontrado!")
+        print(f"Por favor, coloque os PDFs da resolução dentro da pasta '{caminho_dados}/' e rode o script novamente.")
+    else:
+        print("📄 PDFs encontrados! Construindo o banco vetorial ChromaDB...")
+        retriever = PDFIndexerRetriever()
+        retriever.build_index_from_folder(caminho_dados)
+        print("✅ Banco vetorial criado com sucesso!\n")
+        
+        query = "Como posso fazer minha matricula?"
+        print(f"🔎 Testando busca vetorial com a query: '{query}'")
+        results = retriever.retrieve(query, k=3)
+
+        print("\n🔎 Resultados da busca:")
+        for r in results:
+            src  = r['meta'].get('source')
+            page = r['meta'].get('page')
+            sim  = r['similarity']
+            snippet = r['text'][:300].replace("\n", " ") + ("..." if len(r['text']) > 300 else "")
+            print(f"- Fonte: {src} (pág {page}) | Similaridade: {sim:.3f}")
+            print(snippet, "\n")

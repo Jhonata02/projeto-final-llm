@@ -6,10 +6,10 @@
 **LLM juiz (Ollama):** `mistral`  
 
 ## Métricas RAGAS
-- Faithfulness (HHEM): **0.250**
+- Faithfulness (HHEM): **0.083**
 
 ## Latência & Footprint
-- Latência média (s): **4.423**
-- Latência p95 (s): **9.711**
-- CPU média (%): **12.9**
-- RAM média (MB): **1083.3**
+- Latência média (s): **7.809**
+- Latência p95 (s): **14.357**
+- CPU média (%): **4.3**
+- RAM média (MB): **1100.3**

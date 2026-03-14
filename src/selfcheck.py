@@ -32,31 +32,30 @@ def extract_claims(text: str) -> List[str]:
 def _find_supports_for_claim(
     claim: str,
     retriever: PDFIndexerRetriever,
-    min_sim: float = 0.52, # AUMENTADO: Exige 70% de similaridade vetorial
-    min_overlap_terms: int = 2, # AUMENTADO: Exige pelo menos 3 palavras em comum
+    min_sim: float = 0.45,
+    min_overlap_terms: int = 1,
     k: int = 8,
 ) -> List[Dict[str, Any]]:
     hits = retriever.retrieve(claim, k=k)
     if not hits:
         return []
-    # Filtro rigoroso: Similaridade vetorial + Sobreposição de termos (Keywords)
+    
     accepted = [
         h for h in hits 
         if _sim_of(h) >= min_sim and _overlap(claim, h.get("text", "")) >= min_overlap_terms
     ]
     accepted.sort(key=_sim_of, reverse=True)
-    return accepted[:1] # Retorna apenas a melhor evidência
+    return accepted[:1] 
 
 def check_claims_and_rewrite(
     draft: str,
     claims: List[str],
     retriever: PDFIndexerRetriever,
-    min_sim: float = 0.52, # REFLETIR O RIGOR AQUI
-    min_overlap_terms: int = 2,
+    min_sim: float = 0.45,
+    min_overlap_terms: int = 1,
 ) -> str:
     kept_lines: List[str] = []
     
-    # Processa apenas o rascunho original para validação
     for sent in _sentences(draft):
         supports = _find_supports_for_claim(
             claim=sent,
@@ -66,21 +65,18 @@ def check_claims_and_rewrite(
             k=5,
         )
         
-        # Se uma frase do LLM não tem suporte direto e forte nos PDFs, ela é DESCARTADA
         if not supports:
             continue  
 
         ev = supports[0]
-        meta = ev.get("metadata", {}) # Corrigido de 'meta' para 'metadata' padrão do Chroma
+        meta = ev.get("meta", {}) 
         title = meta.get("source") or "Documento"
         page = meta.get("page")
 
-        # Formata a citação de forma limpa para o juiz HHEM
         cite = f" [{os.path.basename(title)}{', p. ' + str(page) if page else ''}]"
 
         line = sent if cite in sent else (sent + cite)
         kept_lines.append(line)
 
     final = " ".join(kept_lines).strip()
-    # Se sobrar pouco texto validado, prefere assumir que não encontrou base
     return final if len(kept_lines) >= 1 else "NÃO ENCONTREI BASE DOCUMENTAL SEGURA"

@@ -28,7 +28,7 @@ def get_app():
     return _app
 
 def run_pipeline(
-    mode: Literal["chat", "detector", "automation"], # <-- Adicionado automation
+    mode: Literal["chat", "detector", "automation"],
     user_input: str,
     history: Optional[List[Dict[str, str]]] = None
 ) -> str:
@@ -40,5 +40,5 @@ def run_pipeline(
     }
     out = app.invoke(state, config={"configurable": {"thread_id": "main"}})
     final = out.get("final") or out.get("draft") or "NÃO ENCONTREI BASE"
-    #final = add_disclaimer(final, mode)
+    final = add_disclaimer(final, mode)
     return final

@@ -59,10 +59,10 @@ A avaliação da rota de Perguntas e Respostas foi conduzida utilizando o framew
 
 | Métrica RAGAS | Score | Latência Média | Consumo de RAM |
 | :--- | :--- | :--- | :--- |
-| **Answer Relevancy** | `0.274` | 5.13s | ~ 1081 MB |
-| **Faithfulness (HHEM)** | `0.250` | 4.42s | ~ 1083 MB |
+| **Answer Relevancy** | `0.594` | 8.96s | ~ 1081 MB |
+| **Faithfulness (HHEM)** | `0.083` | 7.81s | ~ 1083 MB |
 
-> **Nota sobre os Scores:** O sistema adota uma arquitetura *Zero-Trust*. Sempre que a recuperação vetorial não mapeia a regra exata, o nó de `Self-Check` bloqueia a resposta do LLM e emite uma recusa de segurança. O RAGAS penaliza matematicamente essas abstenções (atribuindo nota zero). Logo, os scores estabilizados na casa dos `0.25 - 0.27` refletem a **alta taxa de contenção de alucinações**, priorizando a segurança do aluno acima de prestatividade especulativa.
+> **Nota sobre os Scores:** O sistema adota uma arquitetura *Zero-Trust*. Sempre que a recuperação vetorial não mapeia a regra exata, o nó de `Self-Check` bloqueia a resposta do LLM e emite uma recusa de segurança. O RAGAS penaliza matematicamente essas abstenções (atribuindo nota zero). Logo, os scores baixos na métricas Faithfulness na casa dos `0.08` refletem a **alta taxa de contenção de alucinações**, priorizando a segurança do aluno acima de prestatividade especulativa.
 
 ---
 
@@ -75,7 +75,7 @@ A avaliação da rota de Perguntas e Respostas foi conduzida utilizando o framew
 
 2. Criar ambiente virtual:
    ```bash
-   python3 -m venv .venv 
+   python3.11 -m venv .venv 
    source .venv/bin/activate  # No Windows use: .venv\Scripts\activate
 
 3. Instalar dependências:

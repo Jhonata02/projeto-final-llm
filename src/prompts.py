@@ -27,5 +27,4 @@ Não adicione nenhuma outra palavra se não encontrar a resposta.
 """)
 
 def get_detector_prompt():
-    # Mantido por compatibilidade de estrutura, mas não será o foco principal agora
     return get_chat_prompt()
