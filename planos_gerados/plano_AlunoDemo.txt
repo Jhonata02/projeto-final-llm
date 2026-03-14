@@ -1,11 +1,10 @@
-=== PLANO DE MATRÍCULA: REJEITADO (Regras não atendidas) ===
+=== PLANO DE MATRÍCULA: APROVADO ===
 Aluno: Aluno_Demo
 
-Histórico Atual (Simulado): 4 disciplinas concluídas.
+Histórico Atual (Simulado): 17 disciplinas concluídas.
 
 Análise de Pré-requisitos (Base: Res. 08/2017):
-❌ Trabalho De Conclusão De Curso: BLOQUEADA. Falta cursar: Projeto De Trabalho De Conclusão De Curso
-❌ Teoria Da Computação: BLOQUEADA. Falta cursar: Paradigmas De Linguagem De Programação
+✅ Programação I: Sem pré-requisitos cadastrados (1º período).
 
 Notas do Agente:
 O agente analisou as diretrizes do curso e aplicou as regras de pré-requisitos locais.

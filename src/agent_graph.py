@@ -22,6 +22,44 @@ class State(TypedDict, total=False):
 
 SIM_THRESHOLD = 0.50
 
+
+def _normalize_mcp_result(raw: Any) -> str:
+    """Converte retorno bruto da tool MCP em texto legivel para UI."""
+    if raw is None:
+        return "Sem retorno da ferramenta MCP."
+
+    if isinstance(raw, str):
+        return raw
+
+    if isinstance(raw, dict):
+        if isinstance(raw.get("text"), str):
+            return raw["text"]
+        if isinstance(raw.get("content"), str):
+            return raw["content"]
+        if isinstance(raw.get("content"), list):
+            parts = []
+            for item in raw["content"]:
+                if isinstance(item, dict) and isinstance(item.get("text"), str):
+                    parts.append(item["text"])
+            if parts:
+                return "\n".join(parts)
+        return str(raw)
+
+    if isinstance(raw, list):
+        parts = []
+        for item in raw:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                text = item.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+        if parts:
+            return "\n".join(parts)
+        return str(raw)
+
+    return str(raw)
+
 def _router(state: State) -> Dict[str, Any]:
     return {"intent": state.get("mode", "chat")}
 
@@ -106,7 +144,11 @@ def _automation_agent(state: State) -> Dict[str, Any]:
 
     try:
         mcp_resultado = asyncio.run(run_mcp_adapter())
-        final_answer = f"**Automação via Adapter MCP (stdio) executada com sucesso!**\n\nDisciplinas lidas: `{disciplinas_str}`\n\n{mcp_resultado}"
+        mcp_resultado_txt = _normalize_mcp_result(mcp_resultado)
+        final_answer = (
+            "**Automação via Adapter MCP (stdio) executada com sucesso!**\n\n"
+            f"Disciplinas lidas: `{disciplinas_str}`\n\n{mcp_resultado_txt}"
+        )
     except Exception as e:
          final_answer = f"⚠️ Erro de conexão com o Servidor MCP: {e}"
 

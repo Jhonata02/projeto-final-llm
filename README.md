@@ -118,15 +118,29 @@ A avaliação da rota de Perguntas e Respostas foi conduzida utilizando o framew
 
 ## Avaliação para cada métrica
 
+Para comparação **justa e reprodutível** entre as métricas, rode ambas com o mesmo juiz e mesmas variáveis de ambiente:
+
+```bash
+export OLLAMA_BASE_URL="http://127.0.0.1:11434"
+export OLLAMA_JUDGE="mistral"
+export OLLAMA_TEMPERATURE=0.0
+export OLLAMA_NUM_CTX=2048
+export HHEM_CTX_K=1
+export HHEM_CTX_WORDS=80
+export HHEM_ANS_WORDS=120
+```
+
 1. **Avaliar Fidelidade (Faithfulness - HHEM)**:
    ```bash
-   PYTHONPATH=. python eval/eval_ragas.py --data eval/perguntas_com_gabarito.jsonl --mode chat --metric faithfulness_hhem --outdir reports
+   PYTHONPATH=. python eval/eval_ragas.py --data eval/perguntas_com_gabarito.jsonl --mode chat --metric faithfulness_hhem --outdir reports --debug
    ```
 
 2. **Avaliar Relevância da Resposta (Answer Relevancy)**:
    ```bash
-   PYTHONPATH=. python eval/eval_ragas.py --data eval/perguntas_com_gabarito.jsonl --mode chat --metric answer_relevancy --outdir reports
+   PYTHONPATH=. python eval/eval_ragas.py --data eval/perguntas_com_gabarito.jsonl --mode chat --metric answer_relevancy --outdir reports --debug
    ```
+
+> Dica: se o `faithfulness_hhem` vier vazio/instável em uma execução, repita o comando mantendo as variáveis acima para reduzir variação.
 
 ## ✅ Testes rápidos
 
