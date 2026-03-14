@@ -59,8 +59,8 @@ A avaliação da rota de Perguntas e Respostas foi conduzida utilizando o framew
 
 | Métrica RAGAS | Score | Latência Média | Consumo de RAM |
 | :--- | :--- | :--- | :--- |
-| **Answer Relevancy** | `0.274` | 5.13s | ~ 1081 MB |
-| **Faithfulness (HHEM)** | `0.250` | 4.42s | ~ 1083 MB |
+| **Answer Relevancy** | `0.418` | 1.87s | ~ 1466 MB |
+| **Faithfulness (HHEM)** | `0.100` | 1.87s | ~ 1467 MB |
 
 > **Nota sobre os Scores:** O sistema adota uma arquitetura *Zero-Trust*. Sempre que a recuperação vetorial não mapeia a regra exata, o nó de `Self-Check` bloqueia a resposta do LLM e emite uma recusa de segurança. O RAGAS penaliza matematicamente essas abstenções (atribuindo nota zero). Logo, os scores estabilizados na casa dos `0.25 - 0.27` refletem a **alta taxa de contenção de alucinações**, priorizando a segurança do aluno acima de prestatividade especulativa.
 
